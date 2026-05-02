@@ -1,21 +1,31 @@
-function [Cp_KT, Cp_star] = KarmanTsien(N, alpha, M_inf, gamma, cp_values)
+function [Cp_KT, Cp_star] = KarmanTsien(N, alpha_deg, M_inf, gamma, cp_values)
 
 % -------------------------------------------------------------------------
 % KARMAN-TSIEN COMPRESSIBILITY CORRECTION
 %
-% cp_values -> (alpha x panels)
-% Cp_KT     -> (Mach x alpha)
-% Cp_star   -> (Mach x 1)
+% Computes the compressibility-corrected minimum pressure coefficient (Cp)
+% using the Karman-Tsien rule, and the critical (sonic) pressure coefficient Cp*.
+%
+% Inputs:
+%   N           -> number of panels
+%   alpha_deg   -> angle of attack (degrees)
+%   M_inf       -> vector of Mach numbers
+%   gamma       -> ratio of specific heats
+%   cp_values   -> incompressible Cp (alpha x panels)
+%
+% Outputs:
+%   Cp_KT       -> corrected Cp (Mach x alpha)
+%   Cp_star     -> critical Cp* (Mach x 1)
 % -------------------------------------------------------------------------
 
-n_alpha = length(alpha);
+n_alpha = length(alpha_deg);
 n_M = length(M_inf);
 
-Cp_KT = zeros(n_M, n_alpha);
+Cp_KT   = zeros(n_M, n_alpha);
 Cp_star = zeros(n_M,1);
 
 %% ------------------------------------------------------------------------
-% Cp* (condició sònica)
+% Compute Cp* (sonic condition)
 
 for i = 1:n_M
 
@@ -27,23 +37,23 @@ for i = 1:n_M
 end
 
 %% ------------------------------------------------------------------------
-% Cp amb Karman-Tsien
+% Compute corrected Cp using Karman-Tsien (minimum Cp for each alpha)
 
 for j = 1:n_alpha
 
-    % 🔴 TEORIA: el punt crític és el Cp mínim
+    % Critical point: minimum Cp at given angle of attack
     Cp0 = min(cp_values(j,:));
 
     for i = 1:n_M
 
         M = M_inf(i);
-
         beta = sqrt(1 - M^2);
 
-        Cp_KT(i,j) = (Cp0 / beta) / ...
-            (1 + (gamma-1)/2 * M^2 * (Cp0/(2*beta)));
+        % --- Karman-Tsien correction
+        Cp_KT(i,j) = Cp0 / (beta + (M^2/(1+beta))*(Cp0/2));
 
     end
+
 end
 
 end

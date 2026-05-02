@@ -1,24 +1,45 @@
-function [nv,tv,pl] = nortanlen(N,x,z)
-% Outputs
-%   nv: normal vectors at each control point
-%   tv: tangent vectors at each control point
-%   pl: panel lengths
+function [nv, tv, pl] = nortanlen(N, x, z)
 
-nv=zeros(N,2); 
-tv=zeros(N,2); 
-pl=zeros(N,1); 
-nx=zeros(N,1); nz=zeros(N,1);
-tx=zeros(N,1); tz=zeros(N,1);
- 
-for i=1:N
-    pl(i)=sqrt((x(i+1)-x(i))^2+(z(i+1)-z(i))^2); % panel length
-    nx(i)=(z(i)-z(i+1))/pl(i); % normal vector x components (sin alpha)
-    nz(i)=(x(i+1) - x(i))/pl(i); % normal vector z components (cos alpha)
-    nv(i,:)=[nx(i), nz(i)];
+% -------------------------------------------------------------------------
+% COMPUTE NORMAL AND TANGENT VECTORS + PANEL LENGTHS
+%
+% Computes the geometric properties of each panel:
+%   - Panel length
+%   - Unit normal vector
+%   - Unit tangent vector
+%
+% Inputs:
+%   N   -> number of panels
+%   x   -> x-coordinates of nodes (N+1)
+%   z   -> z-coordinates of nodes (N+1)
+%
+% Outputs:
+%   nv  -> normal vectors at each panel (Nx2)
+%   tv  -> tangent vectors at each panel (Nx2)
+%   pl  -> panel lengths (Nx1)
+% -------------------------------------------------------------------------
+
+nv = zeros(N,2);
+tv = zeros(N,2);
+pl = zeros(N,1);
+
+for i = 1:N
     
-    tx(i)= nz(i); % tangent vector x components (cos alpha)
-    tz(i)=-nx(i); % tangent vector z components (-sin alpha)
-    tv(i,:)=[tx(i), tz(i)];
+    % --- Panel length
+    dx = x(i+1) - x(i);
+    dz = z(i+1) - z(i);
+    pl(i) = sqrt(dx^2 + dz^2);
+    
+    % --- Unit normal vector (pointing outward)
+    nx =  (z(i) - z(i+1)) / pl(i);
+    nz =  (x(i+1) - x(i)) / pl(i);
+    nv(i,:) = [nx, nz];
+    
+    % --- Unit tangent vector (aligned with panel)
+    tx =  nz;
+    tz = -nx;
+    tv(i,:) = [tx, tz];
 
 end
+
 end
