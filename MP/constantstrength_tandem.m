@@ -53,6 +53,8 @@ z = [z1; z2];
 
 NT = 2*N; % total panels
 
+ivel = zeros(NT,NT,2);
+
 %% ------------------------------------------------------------------------
 % CONTROL POINTS
 
@@ -165,7 +167,7 @@ for i = 1:NT
     
     % Pressure coefficient
     cp(i) = 1 - (vortex(i)/norm(Qinf))^2;
-    
+
     % Moments
     Cm14 = Cm14 + cp(i) * ((xc(i)-0.25) * pl(i) / c_tot^2);
     Cm0  = Cm0  + cp(i) * ( xc(i)        * pl(i) / c_tot^2);

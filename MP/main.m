@@ -42,7 +42,20 @@ cm_alpha = regr_cm(1);
 
 xac = 0.25 - cm_alpha / cl_alpha;
 
-fprintf('Aerodynamic center (x/c) = %.4f\n', xac);
+fprintf('\n=====================================================\n');
+fprintf('PART 1: HQ300 AIRFOIL\n');
+fprintf('=====================================================\n');
+
+fprintf('\nAlpha (deg):     ');
+fprintf('%8.1f', alpha_deg);
+
+fprintf('\nCl:              ');
+fprintf('%8.4f', cl_values);
+
+fprintf('\nCm(c/4):         ');
+fprintf('%8.4f', cm_values);
+
+fprintf('\n\nAerodynamic center (x/c) = %.4f\n', xac);
 
 %% ------------------------------------------------------------------------
 % PART 2: CRITICAL MACH
@@ -53,6 +66,16 @@ M_inf = linspace(0.3,0.8,100);
 
 [Cp_KT, Cp_star] = KarmanTsien(N, alpha_Mcrit, M_inf, gamma, cp_values(1:3,:));
 Mcrit = compute_Mcrit(M_inf, Cp_KT, Cp_star);
+
+fprintf('\n=====================================================\n');
+fprintf('PART 2: CRITICAL MACH (Karman-Tsien)\n');
+fprintf('=====================================================\n');
+
+fprintf('\nAlpha (deg)    Mcrit\n');
+
+for i = 1:length(Mcrit)
+    fprintf('%10.1f    %6.4f\n', alpha_Mcrit(i)*180/pi, Mcrit(i));
+end
 
 %% ------------------------------------------------------------------------
 % PART 3: Cl vs Mach (alpha = 4º)
@@ -69,6 +92,16 @@ Mach_list = [Mcrit(idx_alpha)-0.15,...
     constantstrength_project(HQ300, N, chord, alpha_target);
 
 Cl_Mach = compute_Cl_KT(chord, Mach_list, N, nv_ref, pl_ref, rad2deg(alpha_target), cp_ref);
+
+fprintf('\n=====================================================\n');
+fprintf('PART 3: Cl vs Mach (alpha = 4 deg)\n');
+fprintf('=====================================================\n');
+
+fprintf('\nMach        Cl\n');
+
+for i = 1:length(Mach_list)
+    fprintf('%6.3f    %6.4f\n', Mach_list(i), Cl_Mach(i));
+end
 
 %% ------------------------------------------------------------------------
 % PART 4: TANDEM AIRFOIL
@@ -89,6 +122,19 @@ for i = 1:length(alpha2)
 
 end
 
+fprintf('\n=====================================================\n');
+fprintf('PART 4: TANDEM AIRFOIL (delta = 0)\n');
+fprintf('=====================================================\n');
+
+fprintf('\nAlpha (deg):     ');
+fprintf('%8.1f', alpha_deg);
+
+fprintf('\nCl (tandem):     ');
+fprintf('%8.4f', cl_tandem);
+
+fprintf('\nCm(c/4):         ');
+fprintf('%8.4f', cm_tandem);
+
 %% ------------------------------------------------------------------------
 % PART 5: DEFLECTION EFFECT
 
@@ -105,6 +151,19 @@ for i = 1:length(delta)
     cm_delta(i) = Cm14;
 
 end
+
+fprintf('\n=====================================================\n');
+fprintf('PART 5: DEFLECTION EFFECT (alpha = 4 deg)\n');
+fprintf('=====================================================\n');
+
+fprintf('\nDelta (deg):     ');
+fprintf('%8.1f', delta_deg);
+
+fprintf('\nCl:              ');
+fprintf('%8.4f', cl_delta);
+
+fprintf('\nCm(c/4):         ');
+fprintf('%8.4f', cm_delta);
 
 %% ------------------------------------------------------------------------
 % PLOTS

@@ -126,7 +126,7 @@ for i = 1:N
         vind = vind + vortex(j) * squeeze(ivel(i,j,:))';
     end
 
-    v = Qinf + vind;
+    V = Qinf + vind;
 
     % Pressure coefficient (simplified vortex relation)
     cp(i) = 1 - (vortex(i)/Q)^2;
