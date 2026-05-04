@@ -4,8 +4,8 @@ tic
 %% ------------------------------------------------------------------------
 % LOAD GEOMETRY
 
-addpath('/Users/joandurobayona/Documents/Matlab/AMVO/MP/HQ_300')
-addpath('/Users/joandurobayona/Documents/Matlab/AMVO/MP/NACA0012')
+addpath('HQ_300')
+addpath('NACA0012')
 
 HQ300 = load('HQ300_128.txt');
 NACA0012 = load('NACA_0012_N_128.txt');

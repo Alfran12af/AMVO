@@ -1,4 +1,4 @@
-function [x, z, xc, zc, nv, tv, cp, Cl, Cm14, xcp, pl, vortex] = ...
+function [x, z, xc, zc, nv, tv, Cp, Cl, Cm14, xcp, pl, vortex] = ...
     constantstrength_project(data, N, c, alpha)
 
 % -------------------------------------------------------------------------
@@ -6,17 +6,21 @@ function [x, z, xc, zc, nv, tv, cp, Cl, Cm14, xcp, pl, vortex] = ...
 %
 % Computes aerodynamic coefficients of an airfoil using a vortex panel method.
 %
-% Inputs:
-%   data  -> airfoil coordinates (Nx3: index, x, z)
-%   N     -> number of panels
-%   c     -> chord length
-%   alpha -> angle of attack (radians)
+% INPUTS:
+%   data:   airfoil coordinates (Nx3: index, x, z)
+%   N:      number of panels
+%   c:      chord length
+%   alpha:  angle of attack (radians)
 %
-% Outputs:
-%   cp    -> pressure coefficient distribution (Nx1)
-%   Cl    -> lift coefficient
-%   Cm14  -> moment coefficient about quarter chord
-%   xcp   -> center of pressure
+% OUTPUTS:
+%   Cp:     pressure coefficient distribution (Nx1)
+%   Cl:     lift coefficient
+%   Cm14:   moment coefficient about quarter chord
+%   xcp:    center of pressure
+
+
+
+
 % -------------------------------------------------------------------------
 
 %% ------------------------------------------------------------------------
@@ -32,16 +36,21 @@ zc = (z(1:end-1) + z(2:end)) / 2;
 % Panel geometry
 [nv, tv, pl] = nortanlen(N, x, z);
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5
 % Freestream
 Qinf = [cos(alpha), sin(alpha)];
 Q = norm(Qinf);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %% ------------------------------------------------------------------------
 % INITIALIZATION
 
 a = zeros(N,N);          % Influence matrix
 b = zeros(N,1);          % RHS
-ivel = zeros(N,N,2);     % Induced velocity storage
+gamma_vel = zeros(N,N,2);     % Induced velocity storage
 
 %% ------------------------------------------------------------------------
 % BUILD INFLUENCE MATRIX
@@ -79,8 +88,8 @@ for i = 1:N
             vx =  u*cos_a + w*sin_a;
             vz = -u*sin_a + w*cos_a;
 
-            ivel(i,j,1) = vx;
-            ivel(i,j,2) = vz;
+            gamma_vel(i,j,1) = vx;
+            gamma_vel(i,j,2) = vz;
 
             % Influence coefficient
             a(i,j) = dot([vx, vz], tv(i,:));
@@ -110,7 +119,7 @@ vortex(idx) = 0.5 * (vortex(idx-1) + vortex(idx+1));
 %% ------------------------------------------------------------------------
 % POST-PROCESSING
 
-cp   = zeros(N,1);
+Cp   = zeros(N,1);
 Cl   = 0;
 Cm14 = 0;
 Cm0  = 0;
@@ -118,26 +127,28 @@ Cm0  = 0;
 for i = 1:N
 
     % Lift contribution
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     Cl = Cl + vortex(i) * pl(i) / (Q * c);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
     % Induced velocity
     vind = [0,0];
     for j = 1:N
-        vind = vind + vortex(j) * squeeze(ivel(i,j,:))';
+        vind = vind + vortex(j) * squeeze(gamma_vel(i,j,:))';
     end
 
     V = Qinf + vind;
 
     % Pressure coefficient (simplified vortex relation)
-    cp(i) = 1 - (vortex(i)/Q)^2;
+    Cp(i) = 1 - (vortex(i)/Q)^2;
 
     % Geometry increments
     dx = x(i+1) - x(i);
     dz = z(i+1) - z(i);
 
     % Moments
-    Cm14 = Cm14 + cp(i)*((xc(i)-0.25)*dx/c^2 + zc(i)*dz/c^2);
-    Cm0  = Cm0  + cp(i)*( xc(i)*dx/c^2        + zc(i)*dz/c^2);
+    Cm14 = Cm14 + Cp(i)*((xc(i)-0.25)*dx/c^2 + zc(i)*dz/c^2);
+    Cm0  = Cm0  + Cp(i)*( xc(i)*dx/c^2        + zc(i)*dz/c^2);
 
 end
 
