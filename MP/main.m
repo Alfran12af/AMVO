@@ -7,26 +7,62 @@ tic
 addpath('/Users/joandurobayona/Documents/Matlab/AMVO/MP/HQ_300')
 addpath('/Users/joandurobayona/Documents/Matlab/AMVO/MP/NACA0012')
 
-HQ300 = load('HQ300_128.txt');
-NACA0012 = load('NACA_0012_N_128.txt');
-
 chord = 1;
 alpha_deg = 0:2:8;
 alpha = deg2rad(alpha_deg);
 gamma = 1.4;
 
-N = size(HQ300,1)-1;
+%% ------------------------------------------------------------------------
+% CONVERGENCE
+
+files = {'HQ300_16.txt','HQ300_32.txt','HQ300_64.txt','HQ300_128.txt','HQ300_256.txt','HQ300_512.txt'};
+files2 = {'NACA_0012_N_32.txt','NACA_0012_N_64.txt','NACA_0012_N_128.txt','NACA_0012_N_256.txt','NACA_0012_N_512.txt'};
+HQ300_Cl_conv = zeros(length(files),1);
+NACA0012_Cl_conv = zeros(length(files2),1);
+
+alpha_test = deg2rad(4);
+
+for k = 1:length(files)
+
+    data = load(files{k});
+    Nloc = size(data,1)-1;
+
+    [~,~,~,~,~,~,~,HQ300_Cl,~,~,~,~,~] = ...
+    vortexPanel2D(data,Nloc,chord,alpha_test);
+
+    HQ300_Cl_conv(k) = HQ300_Cl;
+
+end
+
+for j = 1:length(files2)
+
+    data2 = load(files2{j});
+    Nloc2 = size(data2,1)-1;
+
+    [~,~,~,~,~,~,~,NACA0012_Cl,~,~,~,~,~] = ...
+    vortexPanel2D(data2,Nloc2,chord,alpha_test);
+
+    NACA0012_Cl_conv(j) = NACA0012_Cl;
+
+end
+
 
 %% ------------------------------------------------------------------------
 % PART 1: HQ300 AIRFOIL
 
+HQ300 = load('HQ300_512.txt');
+
+N = size(HQ300,1)-1;
+
+
 for i=1:length(alpha)
 
-    [x,z,xc,zc,nv,tv,cp,Cl,Cm14,xcp,pl,vortex] = ...
-        constantstrength_project(HQ300, N, chord, alpha(i));
+    [x,z,xc,zc,nv,tv,cp,Cl,Cd,Cm14,xcp,pl,vortex] = ...
+    vortexPanel2D(HQ300, N, chord, alpha(i));
 
     cp_values(i,:) = cp;
     cl_values(i) = Cl;
+    cd_values(i) = Cd;
     cm_values(i) = Cm14;
     xcp_values(i) = xcp;
 
@@ -64,8 +100,9 @@ alpha_Mcrit = deg2rad([0 2 4]);
 
 M_inf = linspace(0.3,0.8,100);
 
-[Cp_KT, Cp_star] = KarmanTsien(N, alpha_Mcrit, M_inf, gamma, cp_values(1:3,:));
-Mcrit = compute_Mcrit(M_inf, Cp_KT, Cp_star);
+[Cp_KT, Cp_star] = karmanTsienCorrection(N, alpha_Mcrit, M_inf, gamma, cp_values(1:3,:));
+
+Mcrit = criticalMachNumber(M_inf, Cp_KT, Cp_star);
 
 fprintf('\n=====================================================\n');
 fprintf('PART 2: CRITICAL MACH (Karman-Tsien)\n');
@@ -88,10 +125,10 @@ Mach_list = [Mcrit(idx_alpha)-0.15,...
              Mcrit(idx_alpha)-0.05,...
              Mcrit(idx_alpha)];
 
-[~,~,~,~,nv_ref,~,cp_ref,~,~,~,pl_ref,~] = ...
-    constantstrength_project(HQ300, N, chord, alpha_target);
+[~,~,~,~,nv_ref,~,cp_ref,~,~,~,~,pl_ref,~] = ...
+    vortexPanel2D(HQ300, N, chord, alpha_target);
 
-Cl_Mach = compute_Cl_KT(chord, Mach_list, N, nv_ref, pl_ref, rad2deg(alpha_target), cp_ref);
+Cl_Mach = liftVsMachKT(chord, Mach_list, N, nv_ref, pl_ref, rad2deg(alpha_target), cp_ref);
 
 fprintf('\n=====================================================\n');
 fprintf('PART 3: Cl vs Mach (alpha = 4 deg)\n');
@@ -106,6 +143,8 @@ end
 %% ------------------------------------------------------------------------
 % PART 4: TANDEM AIRFOIL
 
+NACA0012 = load('NACA_0012_N_512.txt');
+
 alpha2 = deg2rad(alpha_deg);
 
 c1 = 0.64;
@@ -114,8 +153,8 @@ d  = 0.02;
 
 for i = 1:length(alpha2)
 
-    [~,~,~,~,~,~,~,Cl,Cm14,~,~,~] = ...
-        constantstrength_tandem(NACA0012, N, c1, c2, d, alpha2(i), 0);
+    [~,~,~,~,~,~,~,Cl,~,Cm14,~,~,~] = ...
+    vortexPanelTandem(NACA0012, N, c1, c2, d, alpha2(i), 0);
 
     cl_tandem(i) = Cl;
     cm_tandem(i) = Cm14;
@@ -144,8 +183,8 @@ alpha_fixed = deg2rad(4);
 
 for i = 1:length(delta)
 
-    [~,~,~,~,~,~,~,Cl,Cm14,~,~,~] = ...
-        constantstrength_tandem(NACA0012, N, c1, c2, d, alpha_fixed, delta(i));
+    [~,~,~,~,~,~,~,Cl,~,Cm14,~,~,~] = ...
+    vortexPanelTandem(NACA0012, N, c1, c2, d, alpha_fixed, delta(i));
 
     cl_delta(i) = Cl;
     cm_delta(i) = Cm14;
@@ -221,29 +260,14 @@ subplot(1,2,2)
 plot(delta_deg, cm_delta,'-o','LineWidth',2)
 xlabel('\delta'); ylabel('C_m')
 
-%% ------------------------------------------------------------------------
-% CONVERGENCE
-
-files = {'HQ300_16.txt','HQ300_32.txt','HQ300_64.txt','HQ300_128.txt','HQ300_256.txt','HQ300_512.txt'};
-Cl_conv = zeros(length(files),1);
-
-alpha_test = deg2rad(4);
-
-for k = 1:length(files)
-
-    data = load(files{k});
-    Nloc = size(data,1)-1;
-
-    [~,~,~,~,~,~,~,Cl,~,~,~,~] = ...
-        constantstrength_project(data,Nloc,chord,alpha_test);
-
-    Cl_conv(k) = Cl;
-
-end
+figure;
+plot([16 32 64 128 256 512], HQ300_Cl_conv,'-o','LineWidth',2)
+xlabel('HQ300 Panels'); ylabel('C_l')
+grid on
 
 figure;
-plot([16 32 64 128 256 512], Cl_conv,'-o','LineWidth',2)
-xlabel('Panels'); ylabel('C_l')
+plot([32 64 128 256 512], NACA0012_Cl_conv,'-o','LineWidth',2)
+xlabel('NACA0012'); ylabel('C_l')
 grid on
 
 toc
