@@ -65,6 +65,7 @@ for i=1:length(alpha)
     cd_values(i) = Cd;
     cm_values(i) = Cm14;
     xcp_values(i) = xcp;
+    cp_min(i) = min(cp);
 
 end
 
@@ -204,10 +205,8 @@ fprintf('%8.4f', cl_delta);
 fprintf('\nCm(c/4):         ');
 fprintf('%8.4f', cm_delta);
 
-%% ------------------------------------------------------------------------
-% PLOTS
-
-% Cp
+% --------------------------------------------------
+% 1. Cp distribution
 figure;
 for i = 1:length(alpha)
     subplot(2,3,i)
@@ -218,56 +217,126 @@ for i = 1:length(alpha)
     grid on; axis square
 end
 
-% Cl & Cm
+
+% --------------------------------------------------
+% 2. Polar: Cl vs Cd
 figure;
-subplot(1,2,1)
+plot(cd_values, cl_values,'-o','LineWidth',2)
+xlabel('C_d'); ylabel('C_l')
+title('Polar curve (HQ300)')
+grid on
+
+
+% --------------------------------------------------
+% 3. Cl, Cd, Cm vs alpha
+figure;
+subplot(1,3,1)
 plot(alpha_deg, cl_values,'-o','LineWidth',2)
-xlabel('\alpha (º)'); ylabel('C_l'); grid on
+xlabel('\alpha (deg)'); ylabel('C_l')
+grid on
 
-subplot(1,2,2)
+subplot(1,3,2)
+plot(alpha_deg, cd_values,'-o','LineWidth',2)
+xlabel('\alpha (deg)'); ylabel('C_d')
+grid on
+
+subplot(1,3,3)
 plot(alpha_deg, cm_values,'-o','LineWidth',2)
-xlabel('\alpha (º)'); ylabel('C_{m_{1/4}}'); grid on
-
-% Mcrit
-figure;
-plot([0 2 4], Mcrit,'-o','LineWidth',2)
-xlabel('\alpha'); ylabel('M_{crit}')
+xlabel('\alpha (deg)'); ylabel('C_m')
 grid on
 
-% Cl vs Mach
+
+% --------------------------------------------------
+% 4. Cp_min vs alpha
 figure;
-plot(Mach_list, Cl_Mach,'-o','LineWidth',2)
-xlabel('Mach'); ylabel('C_l')
+plot(alpha_deg, cp_min,'-o','LineWidth',2)
+xlabel('\alpha (deg)'); ylabel('C_{p,min}')
+title('Minimum Cp vs alpha')
 grid on
 
-% Tandem
+
+% --------------------------------------------------
+% 5. Vortex distribution (gamma)
+figure;
+f = 0.05;
+idx = find(alpha_deg==4);
+
+for i = 1:N
+    vec = f*vortex(i)*nv(i,:);
+    if vortex(i)<0
+        quiver(xc(i),zc(i),-vec(1),-vec(2),'r'); hold on
+    else
+        quiver(xc(i),zc(i),vec(1),vec(2),'b'); hold on
+    end
+end
+plot(x,z,'k')
+axis equal
+title('\Gamma distribution (\alpha = 4º)')
+
+
+% --------------------------------------------------
+% 6. Convergence HQ300
+figure;
+plot([16 32 64 128 256 512], HQ300_Cl_conv,'-o','LineWidth',2)
+xlabel('Panels'); ylabel('C_l')
+title('Convergence HQ300')
+grid on
+
+
+% --------------------------------------------------
+% 7. Cp_min vs Mach (IMPORTANT)
+figure;
+plot(M_inf, Cp_KT(:,2),'LineWidth',2); hold on
+plot(M_inf, Cp_star,'--','LineWidth',2)
+set(gca,'YDir','reverse')
+xlabel('Mach'); ylabel('Cp')
+title('Cp_{min} vs Mach')
+legend('Cp_{KT}','Cp^*')
+grid on
+
+% --------------------------------------------------
+% 8. Polar Tandem
+figure;
+plot(cd_values, cl_values,'-o','LineWidth',2)
+xlabel('C_d'); ylabel('C_l')
+title('Polar Tandem')
+grid on
+
+
+% --------------------------------------------------
+% 9. Cl, Cm vs alpha (tandem)
 figure;
 subplot(1,2,1)
 plot(alpha_deg, cl_tandem,'-o','LineWidth',2)
-xlabel('\alpha'); ylabel('C_l (tandem)')
+xlabel('\alpha'); ylabel('C_l')
+title('Tandem Lift')
 
 subplot(1,2,2)
 plot(alpha_deg, cm_tandem,'-o','LineWidth',2)
-xlabel('\alpha'); ylabel('C_m (tandem)')
+xlabel('\alpha'); ylabel('C_m')
+title('Tandem Moment')
 
-% Deflection
+
+% --------------------------------------------------
+% 10. Convergence NACA0012
+figure;
+plot([32 64 128 256 512], NACA0012_Cl_conv,'-o','LineWidth',2)
+xlabel('Panels'); ylabel('C_l')
+title('Convergence NACA0012')
+grid on
+
+
+% --------------------------------------------------
+% 11. Cl, Cm vs delta
 figure;
 subplot(1,2,1)
 plot(delta_deg, cl_delta,'-o','LineWidth',2)
 xlabel('\delta'); ylabel('C_l')
+title('Lift vs deflection')
 
 subplot(1,2,2)
 plot(delta_deg, cm_delta,'-o','LineWidth',2)
 xlabel('\delta'); ylabel('C_m')
-
-figure;
-plot([16 32 64 128 256 512], HQ300_Cl_conv,'-o','LineWidth',2)
-xlabel('HQ300 Panels'); ylabel('C_l')
-grid on
-
-figure;
-plot([32 64 128 256 512], NACA0012_Cl_conv,'-o','LineWidth',2)
-xlabel('NACA0012'); ylabel('C_l')
-grid on
+title('Moment vs deflection')
 
 toc
